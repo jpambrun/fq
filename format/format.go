@@ -88,6 +88,8 @@ const (
 	WAV                 = "wav"
 	WEBP                = "webp"
 	ZIP                 = "zip"
+
+	SQLITE3 = "sqlite3"
 )
 
 // below are data types used to communicate between formats <FormatName>In/Out
