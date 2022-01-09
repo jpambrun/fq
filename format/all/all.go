@@ -10,6 +10,7 @@ import (
 	_ "github.com/wader/fq/format/bzip2"
 	_ "github.com/wader/fq/format/dns"
 	_ "github.com/wader/fq/format/elf"
+	_ "github.com/wader/fq/format/dicom"
 	_ "github.com/wader/fq/format/flac"
 	_ "github.com/wader/fq/format/gif"
 	_ "github.com/wader/fq/format/gzip"
