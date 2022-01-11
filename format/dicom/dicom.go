@@ -25,17 +25,27 @@ func init() {
 }
 
 func visit(d *decode.D){
+	var itemCount = 0
 	for !d.End() {
 		tagBits := d.PeekBits(32)
 
 		if(tagBits == 0xfeff0de0){
-			d.FieldRawLen("item end", 32)
+			d.FieldRawLen(fmt.Sprintf("item end%d", itemCount), 32)
+			d.FieldU32LE(fmt.Sprintf("item end (always 0)%d", itemCount))
+			itemCount++
 			continue
 		}
 		if(tagBits == 0xfeffdde0){
 			d.FieldRawLen("seq end", 32)
+			d.FieldU32LE("seq end (always 0)")
 			return
 		}
+		if(tagBits == 0xfeff00e0){
+			d.FieldRawLen(fmt.Sprintf("item start%d", itemCount), 32)
+			d.FieldU32LE(fmt.Sprintf("item length%d", itemCount))
+			continue
+		}
+
 		tagString := fmt.Sprintf("x%08X", (tagBits >> 8 & 0x00FF00FF) | (tagBits << 8 & 0xFF00FF00))
 		d.FieldStruct(tagString, func(d *decode.D) {
 			d.FieldU16LE("group", scalar.Hex)
@@ -50,8 +60,8 @@ func visit(d *decode.D){
 			}
 
 			if(vr == "SQ"){
-				d.FieldRawLen("item start", 32)
-				d.FieldU32LE("item length")
+				// d.FieldRawLen("item start", 32)
+				// d.FieldU32LE("item length")
 				visit(d)
 			}
 			d.FieldRawLen("value", int64(l*8))
