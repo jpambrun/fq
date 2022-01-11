@@ -31,22 +31,24 @@ func visit(d *decode.D, parentItemCount int){
 		tagString := fmt.Sprintf("x%08X", (tagBits >> 8 & 0x00FF00FF) | (tagBits << 8 & 0xFF00FF00))
 
 		if(tagBits == 0xfeff00e0){
-			//Item Tag
-			d.FieldRawLen("Item Tag", 32)
-			d.FieldU32LE("Item Len")
+			//Item Tag https://dicom.nema.org/dicom/2013/output/chtml/part05/sect_7.5.html
+			d.FieldStruct("", func(d *decode.D) {
+				d.FieldRawLen("Item Tag", 32)
+				d.FieldU32LE("Item Len")	
+				visit(d, itemCount)
+				d.FieldRawLen("Item Delim Tag", 32)
+				d.FieldU32LE("Item Delim Len")
+	
+			})
 			itemCount++
 			continue
 		}
 		if(tagBits == 0xfeff0de0){
 			//Item Delim.
-			d.FieldRawLen("Item Delim Tag", 32)
-			d.FieldU32LE("Item Delim Len")
 			return
 		}
 		if(tagBits == 0xfeffdde0){
 			//Seq. Delim.
-			d.FieldRawLen("Seq Delim Tag", 32)
-			d.FieldU32LE("Seq Delim Len")
 			return
 		}
 
@@ -69,12 +71,13 @@ func visit(d *decode.D, parentItemCount int){
 				// visit(d, 0)
 				d.FieldArray("items", func(d *decode.D) { 
 					// for each item
-					d.FieldStruct("", func(d *decode.D) {
-						visit(d, itemCount) 
-					})
+					visit(d,0)
 				})
+				d.FieldRawLen("Seq Delim Tag", 32)
+				d.FieldU32LE("Seq Delim Len")
+			} else {
+				d.FieldRawLen("value", int64(l*8))
 			}
-			d.FieldRawLen("value", int64(l*8))
 		})
 	}
 }
