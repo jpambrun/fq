@@ -1,5 +1,7 @@
 package dicom
 
+// https://dicom.nema.org/dicom/2013/output/chtml/part05/sect_A.4.html
+
 import (
 	// "strconv"
 	// "strings"
@@ -59,10 +61,31 @@ func visit(d *decode.D, parentItemCount int){
 			vr := d.FieldUTF8("vr", 2)
 			var l uint64 = 0;
 			if(vr == "OB" || vr =="OW" || vr =="OF" || vr =="SQ" || vr =="UT" || vr =="UN"){
-				d.RawLen( 16)
+				d.FieldRawLen("reserved", 16)
 				l = d.FieldU32LE("length")
 			} else {
 				l = d.FieldU16LE("length")
+			}
+
+			if(vr == "OB" && tagBits == 0xe07f1000){
+				d.FieldArray("fragments", func(d *decode.D) {
+
+					for !d.End() {
+						tagBits := d.PeekBits(32)
+						if(tagBits == 0xfeffdde0){
+							d.U32LE() // seq delim
+							d.U32LE() // legth
+							break;
+						}
+						d.FieldStruct("", func(d *decode.D) {
+							d.FieldU32LE("tag", scalar.Hex)
+							l := d.FieldU32LE("length")
+							if(l != 0) {
+								d.FieldRawLen("data", int64(l*8))
+							}
+						})
+					}
+				})
 			}
 
 			if(vr == "SQ"){
